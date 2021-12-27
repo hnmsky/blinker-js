@@ -1,4 +1,61 @@
+# blinker-nodejs 点灯科技小爱音箱适配
+
+## 简介
+
+可以通过小爱音箱控制自定义设备的开关。 需要在树莓派上运行nodejs，然后网络唤醒相应设备。
+
+## 修改说明
+
+原来的代码点灯科技已经不在维护，根据ESP项目代码做了适配，目前仅支持小爱的这个example：example_miot_multi_outlet.ts
+
+树莓派上进入blinker-js目录后， 运行如下命令
+
+```
+sudo ./node_modules/.bin/ts-node example/miot/example_miot_multi_outlet.ts
+```
+
+其中“./node_modules/.bin/ts-node”这个取决于ts-node安装位置
+
+小爱音箱发送命令后会调用blinker-js/poweron.sh, 默认是用网络唤醒，可以换成自己想要的操作：
+
+```
+#!/bin/sh
+echo "Power on"
+case $1 in
+    1)  echo 'PC 1'
+        etherwake "MAC 1"
+    ;;
+    2)  echo 'PC 2'
+        etherwake "MAC 2"
+    ;;
+    3)  echo 'PC 3'
+        etherwake "MAC 3"
+    ;;
+    4)  echo 'PC 4'
+    	etherwake "MAC 4"
+    ;;
+    *)  echo 'Err'
+        echo $1
+    ;;
+esac
+```
+
+## 问题
+
+在点灯可以的App上设置设备名字为“电脑”后，直接在小爱上说“打开电脑插孔一”这种命令无法操作。
+
+需要先说"打开电脑"， 然后再说“插孔一”， 才可以操作指定设备。
+
+
+
+以下为原始文档，请先按照文档安装设置环境。
+
+------
+
+
+
 # blinker-nodejs  
+
 
 ## 支持文档  
 [文档](https://diandeng.tech/doc/javascript-support)  

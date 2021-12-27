@@ -58,11 +58,13 @@ import { vaLog } from "./debug"
 export class VoiceAssistant {
 
     get subTopic() {
-        return `/sys/${this.device.config.productKey}/${this.device.config.deviceName}/rrpc/request/+`
+        //return `/sys/${this.device.config.productKey}/${this.device.config.deviceName}/rrpc/request/+`
+        return `/device/${this.device.config.deviceName}/r`
     }
 
     get pubTopic() {
-        return `/sys/${this.device.config.productKey}/${this.device.config.deviceName}/rrpc/response/`
+        //return `/sys/${this.device.config.productKey}/${this.device.config.deviceName}/rrpc/response/`
+        return `/device/${this.device.config.deviceName}/s`
     }
 
     vaType;
@@ -140,7 +142,7 @@ export class Miot extends VoiceAssistant {
     constructor(key) {
         super(key)
         this.vaType = { miType: key }
-        this.vaName = 'MIOT'
+        this.vaName = 'ServerSender'
     }
 
     mode(mode: MI_LIGHT_MODE) {
@@ -205,17 +207,31 @@ export class VaMessage extends Message {
 
     update() {
         let responseStr = JSON.stringify(this.response)
-        let data = `{ "fromDevice": "${this.device.config.deviceName}", "toDevice": "${this.voiceAssistant.vaName}_r", "data": ${responseStr}, "deviceType": "vAssistant"}`
-        let base64Data = Buffer.from(data).toString('base64')
-        this.device.mqttClient.publish(this.voiceAssistant.pubTopic + this.id, base64Data)
+        //let data = `{ "fromDevice": "${this.device.config.deviceName}", "toDevice": "${this.voiceAssistant.vaName}_r", "data": ${responseStr}, "deviceType": "vAssistant"}`
+        
+        if (this.device.config.broker == 'aliyun') {
+            let data = `{ "data": ${responseStr},"fromDevice": "${this.device.config.deviceName}", "toDevice": "MIOT_r",  "deviceType": "vAssistant"}`
+            let base64Data = Buffer.from(data).toString('base64')
+            this.device.mqttClient.publish(this.voiceAssistant.pubTopic, base64Data)  
+        } else {
+            let data = `{ "data": ${responseStr},"fromDevice": "${this.device.config.deviceName}", "toDevice": "ServerReceiver",  "deviceType": "vAssistant"}`
+            this.device.mqttClient.publish(this.voiceAssistant.pubTopic, data)
+        }
+
+        //console.log(this.voiceAssistant.pubTopic, data);
         vaLog(responseStr, `device>${this.voiceAssistant.vaName}`)
     }
 }
 
 class powerMessage extends VaMessage {
-    power(state: string) {
-        let data = { pState: state }
-        this.response = Object.assign(this.response, data)
+    power(state: string, id: string) {
+        if (this.device.config.broker == 'aliyun') {
+            let data = { pState: state}
+            this.response = Object.assign(this.response, data)
+        } else {
+            let data = { pState: state , messageId:id}
+            this.response = Object.assign(this.response, data)
+        }
         return this
     }
 

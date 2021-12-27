@@ -1,7 +1,8 @@
 import { BlinkerDevice } from '../../lib/blinker';
 import { Miot, VA_TYPE } from '../../lib/voice-assistant';
+import { exec } from 'child_process'
 
-let device = new BlinkerDevice('');
+let device = new BlinkerDevice('key ID');
 
 let miot = device.addVoiceAssistant(new Miot(VA_TYPE.MULTI_OUTLET));
 
@@ -14,16 +15,20 @@ device.ready().then(() => {
         }
         switch (message.data.set.pState) {
             case 'true':
-                message.power('on').update();
+                message.power('on', message.data.messageId).update();
+                powerOn(message.data.set.num)
                 break;
             case 'false':
-                message.power('off').update();
+                message.power('off', message.data.messageId).update();
                 break;
             default:
                 break;
         }
     })
-
+    miot.stateQuery.subscribe(message => {
+        message.power('on').update();
+        //console.log('stateQuery:', message.data);
+   })  
     device.dataRead.subscribe(message => {
         console.log('otherData:', message);
     })
@@ -55,5 +60,13 @@ let switchState = false
 function turnSwitch() {
     switchState = !switchState
     device.log("切换设备状态为" + (switchState ? 'on' : 'off'))
+    return switchState ? 'on' : 'off'
+}
+function powerOn(num:string) {
+    switchState = true
+    console.log('power on:'+num);
+    exec('bash ./poweron.sh '+ num, (err, stdout, stdrr) => {
+        console.log(stdout)
+      });
     return switchState ? 'on' : 'off'
 }
